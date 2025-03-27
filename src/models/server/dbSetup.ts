@@ -5,26 +5,32 @@ import createQuestionCollection from "./question.collection";
 import createVoteCollection from "./vote.collection";
 import { databases } from "./config";
 
-export default async function getOrCreateDB(){
-    try{
+export default async function getOrCreateDB() {
+    try {
+        // Check if the database exists
         await databases.get(db);
-        console.log("DB connection");
-
-    }catch(err:any){
-       try{
-        await databases.create(db,db)
-        console.log("DB created");
-        await Promise.all([
-            createQuestionCollection(),
-            createAnswerCollection(),
-            createCommentCollection(),
-            createVoteCollection(),
-        ])
-        console.log("Collection created successfully");
-        console.log("DB created successfully");
-       }catch(err:any){
-        console.log("Error creating db or collection: ",err);
-       }
+        console.log("✅ Database connection successful.");
+    } catch (err: any) {
+        if (err.code === 404) {
+            // Only create the database if it doesn't exist
+            try {
+                await databases.create(db, db);
+                console.log("✅ Database created successfully.");
+                
+                // Create collections after the database is created
+                await Promise.all([
+                    createQuestionCollection(),
+                    createAnswerCollection(),
+                    createCommentCollection(),
+                    createVoteCollection(),
+                ]);
+                console.log("✅ Collections created successfully.");
+            } catch (createErr) {
+                console.error("❌ Error creating database or collections:", createErr);
+            }
+        } else {
+            console.error("❌ Error fetching database:", err);
+        }
     }
     return databases;
 }
